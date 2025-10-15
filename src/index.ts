@@ -1,18 +1,13 @@
 import { CharStreams, CommonTokenStream } from "antlr4ts";
-import { RedLangParser } from "../RedLangParser";
+import { RedLangParser } from "./generated/RedLangParser";
 import { RedLangLexer } from "./generated/RedLangLexer";
 import CompilerVisitor from "./visitors/CompilerVisitor";
-
-const code = `
-  declare x:i = 50;
-  func main(): i {
-  show(x);
-  give x;
-}
-`;
+import { printTree } from "./utils/printTree";
+import LLVMVisitor from "./visitors/LLVMVisitor";
+import { allTests } from "./test/codeExamples";
 
 //lexer stage whit char stream
-const codeInput = CharStreams.fromString(code); // divide string in chars example (d - e - c - l - r - e)
+const codeInput = CharStreams.fromString(allTests.test_15_primes); // divide string in chars example (d - e - c - l - r - e)
 const lexer = new RedLangLexer(codeInput);
 const token = new CommonTokenStream(lexer);
 
@@ -21,19 +16,21 @@ const parser = new RedLangParser(token);
 
 const tree = parser.program();
 
-function printTree(node: any, indent: string = "") {
-  console.log(indent + node.constructor.name);
-  for (let i = 0; i < node.childCount; i++) {
-    printTree(node.getChild(i), indent + "  ");
-  }
-}
-
 const visitor = new CompilerVisitor();
 
 visitor.visit(tree);
 
-// if (parser.numberOfSyntaxErrors < 1) printTree(tree);
-// else {
-//   console.log("Hay errores");
-// }
 
+//Building LLVM
+
+/*
+const llvmVisitor = new LLVMVisitor();
+
+llvmVisitor.visit(tree);
+
+if (parser.numberOfSyntaxErrors < 1) printTree(tree);
+else {
+  console.log("Hay errores");
+}
+
+*/

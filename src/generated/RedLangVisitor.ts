@@ -1,35 +1,33 @@
-// Generated from src/config/RedLang.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from ./src/config/RedLang.g4 by ANTLR 4.9.0-SNAPSHOT
 
 
 import type { ParseTreeVisitor } from "antlr4ts/tree/ParseTreeVisitor";
 
 import { ProgramContext } from "./RedLangParser";
-import { TopLevelDeclContext } from "./RedLangParser";
 import { DeclarationContext } from "./RedLangParser";
+import { AssignmentContext } from "./RedLangParser";
+import { TypeContext } from "./RedLangParser";
+import { BaseTypeContext } from "./RedLangParser";
+import { ArrayTypeContext } from "./RedLangParser";
 import { FunctionDeclContext } from "./RedLangParser";
 import { ParametersContext } from "./RedLangParser";
 import { ParamContext } from "./RedLangParser";
-import { TypeContext } from "./RedLangParser";
-import { BaseTypeContext } from "./RedLangParser";
-import { StatementContext } from "./RedLangParser";
-import { AssignmentContext } from "./RedLangParser";
 import { ReturnStmtContext } from "./RedLangParser";
+import { StatementContext } from "./RedLangParser";
+import { BlockContext } from "./RedLangParser";
 import { IfStmtContext } from "./RedLangParser";
 import { WhileStmtContext } from "./RedLangParser";
 import { ForStmtContext } from "./RedLangParser";
-import { ForInitContext } from "./RedLangParser";
-import { ForUpdateContext } from "./RedLangParser";
+import { InitStmtContext } from "./RedLangParser";
 import { PrintStmtContext } from "./RedLangParser";
 import { ReadStmtContext } from "./RedLangParser";
-import { FileStmtsContext } from "./RedLangParser";
-import { BlockContext } from "./RedLangParser";
 import { ExpressionContext } from "./RedLangParser";
 import { LogicOrContext } from "./RedLangParser";
 import { LogicAndContext } from "./RedLangParser";
 import { EqualityContext } from "./RedLangParser";
 import { ComparisonContext } from "./RedLangParser";
-import { AdditiveContext } from "./RedLangParser";
-import { MultiplicativeContext } from "./RedLangParser";
+import { TermContext } from "./RedLangParser";
+import { FactorContext } from "./RedLangParser";
 import { UnaryContext } from "./RedLangParser";
 import { PrimaryContext } from "./RedLangParser";
 import { CallExprContext } from "./RedLangParser";
@@ -54,18 +52,39 @@ export interface RedLangVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitProgram?: (ctx: ProgramContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `RedLangParser.topLevelDecl`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitTopLevelDecl?: (ctx: TopLevelDeclContext) => Result;
-
-	/**
 	 * Visit a parse tree produced by `RedLangParser.declaration`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	visitDeclaration?: (ctx: DeclarationContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RedLangParser.assignment`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitAssignment?: (ctx: AssignmentContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RedLangParser.type`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitType?: (ctx: TypeContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RedLangParser.baseType`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitBaseType?: (ctx: BaseTypeContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RedLangParser.arrayType`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitArrayType?: (ctx: ArrayTypeContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `RedLangParser.functionDecl`.
@@ -89,18 +108,11 @@ export interface RedLangVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitParam?: (ctx: ParamContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `RedLangParser.type`.
+	 * Visit a parse tree produced by `RedLangParser.returnStmt`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitType?: (ctx: TypeContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `RedLangParser.baseType`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitBaseType?: (ctx: BaseTypeContext) => Result;
+	visitReturnStmt?: (ctx: ReturnStmtContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `RedLangParser.statement`.
@@ -110,18 +122,11 @@ export interface RedLangVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitStatement?: (ctx: StatementContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `RedLangParser.assignment`.
+	 * Visit a parse tree produced by `RedLangParser.block`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitAssignment?: (ctx: AssignmentContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `RedLangParser.returnStmt`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitReturnStmt?: (ctx: ReturnStmtContext) => Result;
+	visitBlock?: (ctx: BlockContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `RedLangParser.ifStmt`.
@@ -145,18 +150,11 @@ export interface RedLangVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitForStmt?: (ctx: ForStmtContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `RedLangParser.forInit`.
+	 * Visit a parse tree produced by `RedLangParser.initStmt`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitForInit?: (ctx: ForInitContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `RedLangParser.forUpdate`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitForUpdate?: (ctx: ForUpdateContext) => Result;
+	visitInitStmt?: (ctx: InitStmtContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `RedLangParser.printStmt`.
@@ -171,20 +169,6 @@ export interface RedLangVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitReadStmt?: (ctx: ReadStmtContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `RedLangParser.fileStmts`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitFileStmts?: (ctx: FileStmtsContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `RedLangParser.block`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitBlock?: (ctx: BlockContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `RedLangParser.expression`.
@@ -222,18 +206,18 @@ export interface RedLangVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitComparison?: (ctx: ComparisonContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `RedLangParser.additive`.
+	 * Visit a parse tree produced by `RedLangParser.term`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitAdditive?: (ctx: AdditiveContext) => Result;
+	visitTerm?: (ctx: TermContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `RedLangParser.multiplicative`.
+	 * Visit a parse tree produced by `RedLangParser.factor`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitMultiplicative?: (ctx: MultiplicativeContext) => Result;
+	visitFactor?: (ctx: FactorContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `RedLangParser.unary`.

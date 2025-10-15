@@ -1,41 +1,39 @@
-// Generated from src/config/RedLang.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from ./src/config/RedLang.g4 by ANTLR 4.9.0-SNAPSHOT
 
 
 import type { ParseTreeListener } from "antlr4ts/tree/ParseTreeListener";
 
-import { ProgramContext } from "../../RedLangParser";
-import { TopLevelDeclContext } from "../../RedLangParser";
-import { DeclarationContext } from "../../RedLangParser";
-import { FunctionDeclContext } from "../../RedLangParser";
-import { ParametersContext } from "../../RedLangParser";
-import { ParamContext } from "../../RedLangParser";
-import { TypeContext } from "../../RedLangParser";
-import { BaseTypeContext } from "../../RedLangParser";
-import { StatementContext } from "../../RedLangParser";
-import { AssignmentContext } from "../../RedLangParser";
-import { ReturnStmtContext } from "../../RedLangParser";
-import { IfStmtContext } from "../../RedLangParser";
-import { WhileStmtContext } from "../../RedLangParser";
-import { ForStmtContext } from "../../RedLangParser";
-import { ForInitContext } from "../../RedLangParser";
-import { ForUpdateContext } from "../../RedLangParser";
-import { PrintStmtContext } from "../../RedLangParser";
-import { ReadStmtContext } from "../../RedLangParser";
-import { FileStmtsContext } from "../../RedLangParser";
-import { BlockContext } from "../../RedLangParser";
-import { ExpressionContext } from "../../RedLangParser";
-import { LogicOrContext } from "../../RedLangParser";
-import { LogicAndContext } from "../../RedLangParser";
-import { EqualityContext } from "../../RedLangParser";
-import { ComparisonContext } from "../../RedLangParser";
-import { AdditiveContext } from "../../RedLangParser";
-import { MultiplicativeContext } from "../../RedLangParser";
-import { UnaryContext } from "../../RedLangParser";
-import { PrimaryContext } from "../../RedLangParser";
-import { CallExprContext } from "../../RedLangParser";
-import { ArrayLiteralContext } from "../../RedLangParser";
-import { ArgumentsContext } from "../../RedLangParser";
-import { LiteralContext } from "../../RedLangParser";
+import { ProgramContext } from "./RedLangParser";
+import { DeclarationContext } from "./RedLangParser";
+import { AssignmentContext } from "./RedLangParser";
+import { TypeContext } from "./RedLangParser";
+import { BaseTypeContext } from "./RedLangParser";
+import { ArrayTypeContext } from "./RedLangParser";
+import { FunctionDeclContext } from "./RedLangParser";
+import { ParametersContext } from "./RedLangParser";
+import { ParamContext } from "./RedLangParser";
+import { ReturnStmtContext } from "./RedLangParser";
+import { StatementContext } from "./RedLangParser";
+import { BlockContext } from "./RedLangParser";
+import { IfStmtContext } from "./RedLangParser";
+import { WhileStmtContext } from "./RedLangParser";
+import { ForStmtContext } from "./RedLangParser";
+import { InitStmtContext } from "./RedLangParser";
+import { PrintStmtContext } from "./RedLangParser";
+import { ReadStmtContext } from "./RedLangParser";
+import { ExpressionContext } from "./RedLangParser";
+import { LogicOrContext } from "./RedLangParser";
+import { LogicAndContext } from "./RedLangParser";
+import { EqualityContext } from "./RedLangParser";
+import { ComparisonContext } from "./RedLangParser";
+import { TermContext } from "./RedLangParser";
+import { FactorContext } from "./RedLangParser";
+import { UnaryContext } from "./RedLangParser";
+import { PrimaryContext } from "./RedLangParser";
+import { CallExprContext } from "./RedLangParser";
+import { ArrayLiteralContext } from "./RedLangParser";
+import { ArgumentsContext } from "./RedLangParser";
+import { LiteralContext } from "./RedLangParser";
 
 
 /**
@@ -55,17 +53,6 @@ export interface RedLangListener extends ParseTreeListener {
 	exitProgram?: (ctx: ProgramContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `RedLangParser.topLevelDecl`.
-	 * @param ctx the parse tree
-	 */
-	enterTopLevelDecl?: (ctx: TopLevelDeclContext) => void;
-	/**
-	 * Exit a parse tree produced by `RedLangParser.topLevelDecl`.
-	 * @param ctx the parse tree
-	 */
-	exitTopLevelDecl?: (ctx: TopLevelDeclContext) => void;
-
-	/**
 	 * Enter a parse tree produced by `RedLangParser.declaration`.
 	 * @param ctx the parse tree
 	 */
@@ -75,6 +62,50 @@ export interface RedLangListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitDeclaration?: (ctx: DeclarationContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `RedLangParser.assignment`.
+	 * @param ctx the parse tree
+	 */
+	enterAssignment?: (ctx: AssignmentContext) => void;
+	/**
+	 * Exit a parse tree produced by `RedLangParser.assignment`.
+	 * @param ctx the parse tree
+	 */
+	exitAssignment?: (ctx: AssignmentContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `RedLangParser.type`.
+	 * @param ctx the parse tree
+	 */
+	enterType?: (ctx: TypeContext) => void;
+	/**
+	 * Exit a parse tree produced by `RedLangParser.type`.
+	 * @param ctx the parse tree
+	 */
+	exitType?: (ctx: TypeContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `RedLangParser.baseType`.
+	 * @param ctx the parse tree
+	 */
+	enterBaseType?: (ctx: BaseTypeContext) => void;
+	/**
+	 * Exit a parse tree produced by `RedLangParser.baseType`.
+	 * @param ctx the parse tree
+	 */
+	exitBaseType?: (ctx: BaseTypeContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `RedLangParser.arrayType`.
+	 * @param ctx the parse tree
+	 */
+	enterArrayType?: (ctx: ArrayTypeContext) => void;
+	/**
+	 * Exit a parse tree produced by `RedLangParser.arrayType`.
+	 * @param ctx the parse tree
+	 */
+	exitArrayType?: (ctx: ArrayTypeContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `RedLangParser.functionDecl`.
@@ -110,26 +141,15 @@ export interface RedLangListener extends ParseTreeListener {
 	exitParam?: (ctx: ParamContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `RedLangParser.type`.
+	 * Enter a parse tree produced by `RedLangParser.returnStmt`.
 	 * @param ctx the parse tree
 	 */
-	enterType?: (ctx: TypeContext) => void;
+	enterReturnStmt?: (ctx: ReturnStmtContext) => void;
 	/**
-	 * Exit a parse tree produced by `RedLangParser.type`.
+	 * Exit a parse tree produced by `RedLangParser.returnStmt`.
 	 * @param ctx the parse tree
 	 */
-	exitType?: (ctx: TypeContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `RedLangParser.baseType`.
-	 * @param ctx the parse tree
-	 */
-	enterBaseType?: (ctx: BaseTypeContext) => void;
-	/**
-	 * Exit a parse tree produced by `RedLangParser.baseType`.
-	 * @param ctx the parse tree
-	 */
-	exitBaseType?: (ctx: BaseTypeContext) => void;
+	exitReturnStmt?: (ctx: ReturnStmtContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `RedLangParser.statement`.
@@ -143,26 +163,15 @@ export interface RedLangListener extends ParseTreeListener {
 	exitStatement?: (ctx: StatementContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `RedLangParser.assignment`.
+	 * Enter a parse tree produced by `RedLangParser.block`.
 	 * @param ctx the parse tree
 	 */
-	enterAssignment?: (ctx: AssignmentContext) => void;
+	enterBlock?: (ctx: BlockContext) => void;
 	/**
-	 * Exit a parse tree produced by `RedLangParser.assignment`.
+	 * Exit a parse tree produced by `RedLangParser.block`.
 	 * @param ctx the parse tree
 	 */
-	exitAssignment?: (ctx: AssignmentContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `RedLangParser.returnStmt`.
-	 * @param ctx the parse tree
-	 */
-	enterReturnStmt?: (ctx: ReturnStmtContext) => void;
-	/**
-	 * Exit a parse tree produced by `RedLangParser.returnStmt`.
-	 * @param ctx the parse tree
-	 */
-	exitReturnStmt?: (ctx: ReturnStmtContext) => void;
+	exitBlock?: (ctx: BlockContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `RedLangParser.ifStmt`.
@@ -198,26 +207,15 @@ export interface RedLangListener extends ParseTreeListener {
 	exitForStmt?: (ctx: ForStmtContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `RedLangParser.forInit`.
+	 * Enter a parse tree produced by `RedLangParser.initStmt`.
 	 * @param ctx the parse tree
 	 */
-	enterForInit?: (ctx: ForInitContext) => void;
+	enterInitStmt?: (ctx: InitStmtContext) => void;
 	/**
-	 * Exit a parse tree produced by `RedLangParser.forInit`.
+	 * Exit a parse tree produced by `RedLangParser.initStmt`.
 	 * @param ctx the parse tree
 	 */
-	exitForInit?: (ctx: ForInitContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `RedLangParser.forUpdate`.
-	 * @param ctx the parse tree
-	 */
-	enterForUpdate?: (ctx: ForUpdateContext) => void;
-	/**
-	 * Exit a parse tree produced by `RedLangParser.forUpdate`.
-	 * @param ctx the parse tree
-	 */
-	exitForUpdate?: (ctx: ForUpdateContext) => void;
+	exitInitStmt?: (ctx: InitStmtContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `RedLangParser.printStmt`.
@@ -240,28 +238,6 @@ export interface RedLangListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitReadStmt?: (ctx: ReadStmtContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `RedLangParser.fileStmts`.
-	 * @param ctx the parse tree
-	 */
-	enterFileStmts?: (ctx: FileStmtsContext) => void;
-	/**
-	 * Exit a parse tree produced by `RedLangParser.fileStmts`.
-	 * @param ctx the parse tree
-	 */
-	exitFileStmts?: (ctx: FileStmtsContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `RedLangParser.block`.
-	 * @param ctx the parse tree
-	 */
-	enterBlock?: (ctx: BlockContext) => void;
-	/**
-	 * Exit a parse tree produced by `RedLangParser.block`.
-	 * @param ctx the parse tree
-	 */
-	exitBlock?: (ctx: BlockContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `RedLangParser.expression`.
@@ -319,26 +295,26 @@ export interface RedLangListener extends ParseTreeListener {
 	exitComparison?: (ctx: ComparisonContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `RedLangParser.additive`.
+	 * Enter a parse tree produced by `RedLangParser.term`.
 	 * @param ctx the parse tree
 	 */
-	enterAdditive?: (ctx: AdditiveContext) => void;
+	enterTerm?: (ctx: TermContext) => void;
 	/**
-	 * Exit a parse tree produced by `RedLangParser.additive`.
+	 * Exit a parse tree produced by `RedLangParser.term`.
 	 * @param ctx the parse tree
 	 */
-	exitAdditive?: (ctx: AdditiveContext) => void;
+	exitTerm?: (ctx: TermContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `RedLangParser.multiplicative`.
+	 * Enter a parse tree produced by `RedLangParser.factor`.
 	 * @param ctx the parse tree
 	 */
-	enterMultiplicative?: (ctx: MultiplicativeContext) => void;
+	enterFactor?: (ctx: FactorContext) => void;
 	/**
-	 * Exit a parse tree produced by `RedLangParser.multiplicative`.
+	 * Exit a parse tree produced by `RedLangParser.factor`.
 	 * @param ctx the parse tree
 	 */
-	exitMultiplicative?: (ctx: MultiplicativeContext) => void;
+	exitFactor?: (ctx: FactorContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `RedLangParser.unary`.

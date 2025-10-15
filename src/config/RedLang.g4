@@ -6,16 +6,31 @@ options {
 
 // -------------------- Parser --------------------
 program
-    : (topLevelDecl | statement)* EOF
-    ;
-
-topLevelDecl
-    : declaration
-    | functionDecl
+    : (declaration | functionDecl | statement)* EOF
     ;
 
 declaration
     : DECLARE IDENT COLON type (EQUAL expression)? SEMI
+    ;
+
+assignment
+    : SET IDENT EQUAL expression SEMI
+    ;
+
+type
+    : baseType QUESTION?
+    | arrayType
+    ;
+
+baseType
+    : TYPE_INT
+    | TYPE_FLOAT
+    | TYPE_STRING
+    | TYPE_BOOL
+    ;
+
+arrayType
+    : baseType LBRACK RBRACK (LBRACK RBRACK)*
     ;
 
 functionDecl
@@ -30,15 +45,8 @@ param
     : IDENT COLON type
     ;
 
-type
-    : baseType QUESTION? (LBRACK RBRACK)*
-    ;
-
-baseType
-    : 'i'  // integer
-    | 'f'  // float
-    | 's'  // string
-    | 'b'  // boolean
+returnStmt
+    : GIVE expression SEMI
     ;
 
 statement
@@ -50,15 +58,10 @@ statement
     | returnStmt
     | printStmt
     | readStmt
-    | fileStmts
     ;
 
-assignment
-    : SET IDENT EQUAL expression SEMI
-    ;
-
-returnStmt
-    : GIVE expression SEMI
+block
+    : LBRACE statement* RBRACE
     ;
 
 ifStmt
@@ -70,16 +73,12 @@ whileStmt
     ;
 
 forStmt
-    : LOOP LPAREN forInit? SEMI expression? SEMI forUpdate? RPAREN block
+    : LOOP LPAREN initStmt? SEMI expression? SEMI assignment? RPAREN block
     ;
 
-forInit
-    : declaration
+initStmt
+    : DECLARE IDENT COLON type (EQUAL expression)?
     | SET IDENT EQUAL expression
-    ;
-
-forUpdate
-    : SET IDENT EQUAL expression
     ;
 
 printStmt
@@ -88,20 +87,7 @@ printStmt
 
 readStmt
     : ASK LPAREN RPAREN SEMI
-    | ASK LPAREN IDENT RPAREN SEMI    // ask(var) style if you had it
-    ;
-
-// basic file statements (optional in your lexer)
-fileStmts
-    : READFILE LPAREN STRING_LIT RPAREN SEMI
-    | WRITEFILE LPAREN STRING_LIT COMMA expression RPAREN SEMI
-    | OPEN LPAREN STRING_LIT AS IDENT RPAREN SEMI
-    | CLOSE LPAREN IDENT RPAREN SEMI
-    ;
-
-// block
-block
-    : LBRACE statement* RBRACE
+    | ASK LPAREN IDENT RPAREN SEMI
     ;
 
 // -------------------- Expressions --------------------
@@ -122,14 +108,14 @@ equality
     ;
 
 comparison
-    : additive ((GT | LT | GE | LE) additive)*
+    : term ((GT | LT | GE | LE) term)*
     ;
 
-additive
-    : multiplicative ((ADD | SUB) multiplicative)*
+term
+    : factor ((ADD | SUB) factor)*
     ;
 
-multiplicative
+factor
     : unary ((MUL | DIV | MOD) unary)*
     ;
 
@@ -183,12 +169,16 @@ TRUE      : 'true';
 FALSE     : 'false';
 NULL      : 'null';
 
-// File ops (optional)
-READFILE  : 'readfile';
-WRITEFILE : 'writefile';
-OPEN      : 'open';
-CLOSE     : 'close';
-AS        : 'as';
+// Type keywords (must come before IDENT)
+TYPE_INT    : 'i';
+TYPE_FLOAT  : 'f';
+TYPE_STRING : 's';
+TYPE_BOOL   : 'b';
+
+// Logical operators (words, not symbols!)
+OR   : 'or';
+AND  : 'and';
+NOT  : 'not';
 
 // Symbols
 LPAREN    : '(';
@@ -217,15 +207,12 @@ MOD       : '%';
 // Literals and identifiers
 INT_LIT    : DIGIT+ ;
 FLOAT_LIT  : DIGIT+ '.' DIGIT+ ;
-STRING_LIT
-    : '"' ( ~["\\\r\n] | ESC )* '"'
-    | '\'' ( ~['\\\r\n] | ESC )* '\''
-    ;
+STRING_LIT : '"' ( ~["\\\r\n] | ESC )* '"' ;
 
 IDENT      : LETTER (LETTER | DIGIT | '_')* ;
 
 // fragments
-fragment ESC    : '\\' [nrtbf"\'\\] ;
+fragment ESC    : '\\' [nrtbf"\\] ;
 fragment DIGIT  : [0-9] ;
 fragment LETTER : [A-Za-z] ;
 

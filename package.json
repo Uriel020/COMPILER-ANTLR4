@@ -12,9 +12,10 @@
   },
   "dependencies": {
     "antlr4": "^4.13.2",
-    "antlr4ts": "^0.5.0-alpha.4"
+    "antlr4ts": "^0.5.0-alpha.4",
+    "llvm-node": "^3.0.0"
   },
   "scripts": {
-    "dev" : "bun ./src/index.ts"
+    "dev": "bun ./src/index.ts"
   }
 }
