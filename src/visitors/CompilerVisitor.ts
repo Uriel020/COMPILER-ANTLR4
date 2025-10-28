@@ -1,85 +1,124 @@
 import { AbstractParseTreeVisitor } from "antlr4ts/tree/AbstractParseTreeVisitor";
 import type { RedLangVisitor } from "../generated/RedLangVisitor";
-import type {
-  ProgramContext,
-  DeclarationContext,
-  FunctionDeclContext,
-  TypeContext,
-  AssignmentContext,
-  ExpressionContext,
-  LiteralContext,
-  PrimaryContext,
-  UnaryContext,
-  FactorContext,
-  TermContext,
-  ComparisonContext,
-  EqualityContext,
-  LogicAndContext,
-  LogicOrContext,
-  PrintStmtContext,
-  ReadStmtContext,
-  ReturnStmtContext,
-  IfStmtContext,
-  WhileStmtContext,
-  ForStmtContext,
-  InitStmtContext,
-  BlockContext,
-  CallExprContext,
-  ArrayLiteralContext,
-  ArgumentsContext,
-  StatementContext,
-} from "../generated/RedLangParser";
+import type * as RedLangParser from "../generated/RedLangParser";
 
 type Value = number | string | boolean | null | Value[];
 
 interface FunctionDef {
   params: string[];
-  block: BlockContext;
+  block: RedLangParser.BlockContext;
   returnType: string;
 }
 
-export default class CompilerVisitor
+interface Variable {
+  name: string;
+  reg: string;
+}
+
+export default class LLVMVisitor
   extends AbstractParseTreeVisitor<Value>
   implements RedLangVisitor<Value>
 {
+  private ir: string = '';
+  private indent: number = 0;
+  private labelCounter: number = 0;
+  private regCounter: number = 0;
+
   memory: Record<string, Value> = {};
+  variables: Map<string, Variable> = new Map();
   functions: Record<string, FunctionDef> = {};
   private returnValue: Value = null;
   private hasReturned: boolean = false;
+  private currentFunction: string | null = null;
+
+  constructor(moduleName = "red_module") {
+    super();
+    this.ir = `; ModuleID = '${moduleName}'\n`;
+    this.ir += `target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"\n`;
+    this.ir += `target triple = "x86_64-apple-macosx10.7.0"\n\n`;
+    this.ir += `declare i32 @printf(i8*, ...)\n\n`;
+  }
+
+  private newLabel(prefix: string = "L"): string {
+    return `${prefix}${this.labelCounter++}`;
+  }
+
+  private newReg(prefix: string = "tmp"): string {
+    return `%${prefix}${this.regCounter++}`;
+  }
+
+  private emit(code: string): void {
+    this.ir += "  ".repeat(this.indent) + code + "\n";
+  }
 
   protected defaultResult(): Value {
     return null;
   }
 
-  visitProgram(ctx: ProgramContext): Value {
+  visitProgram(ctx: RedLangParser.ProgramContext): Value {
     for (const child of ctx.functionDecl()) {
       this.visitFunctionDecl(child);
     }
 
+    this.emit("define i32 @main() {");
+    this.indent++;
+    this.emit("entry:");
+    this.indent++;
+    this.currentFunction = "main";
+
     for (const child of ctx.children || []) {
-      if (!this.hasReturned) {
-        this.visit(child);
+      if (child === ctx.EOF()) continue;
+      const childCtx = child as any;
+      if (childCtx.constructor.name === "DeclarationContext") {
+        this.visitDeclaration(childCtx);
+      } else if (childCtx.constructor.name === "StatementContext" || 
+                 childCtx.constructor.name === "AssignmentContext" ||
+                 childCtx.constructor.name === "IfStmtContext" ||
+                 childCtx.constructor.name === "WhileStmtContext" ||
+                 childCtx.constructor.name === "PrintStmtContext") {
+        this.visit(childCtx);
       }
+      if (this.hasReturned) break;
     }
+
+    if (!this.hasReturned) {
+      this.emit("ret i32 0");
+    }
+
+    this.indent--;
+    this.indent--;
+    this.emit("}\n");
+    this.currentFunction = null;
+
     return null;
   }
 
-  visitDeclaration(ctx: DeclarationContext): Value {
+  visitDeclaration(ctx: RedLangParser.DeclarationContext): Value {
     const varName = ctx.IDENT()?.text || "";
-    const typeCtx = ctx.type();
     const expr = ctx.expression();
-    const value = expr ? this.visit(expr) : this.getDefaultValue(typeCtx);
+    let value = 0;
+
+    if (expr) {
+      value = this.visit(expr) as number;
+    } else {
+      value = this.getDefaultValue(ctx.type()) as number;
+    }
+
+    const reg = this.newReg(varName);
+    this.emit(`${reg} = alloca i32`);
+    this.emit(`store i32 ${value}, i32* ${reg}`);
+    this.variables.set(varName, { name: varName, reg });
     this.memory[varName] = value;
+
     return value;
   }
 
-  visitFunctionDecl(ctx: FunctionDeclContext): Value {
+  visitFunctionDecl(ctx: RedLangParser.FunctionDeclContext): Value {
     const funcName = ctx.IDENT()?.text || "";
     const params: string[] = [];
 
     if (ctx.parameters()) {
-      const paramsCtx = ctx.parameters()!;
-      for (const paramCtx of paramsCtx.param()) {
+      for (const paramCtx of ctx.parameters()!.param()) {
         params.push(paramCtx.IDENT()?.text || "");
       }
     }
@@ -92,60 +131,88 @@ export default class CompilerVisitor
       returnType,
     };
 
+    const paramStr = params.map((p, i) => `i32 %arg${i}`).join(", ");
+    this.emit(`define i32 @${funcName}(${paramStr}) {`);
+    this.indent++;
+    this.emit("entry:");
+    this.indent++;
+    this.currentFunction = funcName;
+
+    for (let i = 0; i < params.length; i++) {
+      const reg = this.newReg(params[i]);
+      this.emit(`${reg} = alloca i32`);
+      this.emit(`store i32 %arg${i}, i32* ${reg}`);
+      this.variables.set(params[i] as string, { name: params[i], reg });
+    }
+
+    this.hasReturned = false;
+    this.visit(ctx.block());
+
+    if (!this.hasReturned) {
+      this.emit("ret i32 0");
+    }
+
+    this.indent--;
+    this.indent--;
+    this.emit("}\n");
+
+    this.variables.clear();
+    this.hasReturned = false;
+    this.returnValue = null;
+    this.currentFunction = null;
+
     return null;
   }
 
-  visitAssignment(ctx: AssignmentContext): Value {
+  visitAssignment(ctx: RedLangParser.AssignmentContext): Value {
     const varName = ctx.IDENT()?.text || "";
-    if (!(varName in this.memory)) {
+    const exprVal = this.visit(ctx.expression()) as number;
+
+    const variable = this.variables.get(varName);
+    if (!variable) {
       throw new Error(`Variable '${varName}' no está declarada`);
     }
-    const expr = ctx.expression();
-    const value = expr ? this.visit(expr) : null;
-    this.memory[varName] = value;
-    return value;
+
+    this.emit(`store i32 ${exprVal}, i32* ${variable.reg}`);
+    this.memory[varName] = exprVal;
+    return exprVal;
   }
 
-  visitPrintStmt(ctx: PrintStmtContext): Value {
-    const value = this.visit(ctx.expression());
+  visitPrintStmt(ctx: RedLangParser.PrintStmtContext): Value {
+    const value = this.visit(ctx.expression()) as number;
+    const fmt = `@.str = private constant [4 x i8] c"%d\\0A\\00"`;
+    this.emit(`call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str, i32 0, i32 0), i32 ${value})`);
     console.log(value);
     return value;
   }
 
-  visitReadStmt(ctx: ReadStmtContext): Value {
-    const input = "42";
-    const varName = ctx.IDENT()?.text || "";
-
-    if (varName && varName in this.memory) {
-      this.memory[varName] = input;
-    }
-
-    return input;
+  visitReadStmt(ctx: RedLangParser.ReadStmtContext): Value {
+    return "42";
   }
 
-  visitReturnStmt(ctx: ReturnStmtContext): Value {
+  visitReturnStmt(ctx: RedLangParser.ReturnStmtContext): Value {
     this.returnValue = this.visit(ctx.expression());
     this.hasReturned = true;
+    const val = this.returnValue as number;
+    this.emit(`ret i32 ${val}`);
     return this.returnValue;
   }
 
-  visitIfStmt(ctx: IfStmtContext): Value {
+  visitIfStmt(ctx: RedLangParser.IfStmtContext): Value {
     const cond = this.visit(ctx.expression());
     const blocks = ctx.block();
 
     if (this.isTruthy(cond)) {
-      if (this.isTruthy(cond)) {
-        const thenBlock = blocks?.[0];
-        if (thenBlock) this.visit(thenBlock);
-      } else {
-        const elseBlock = blocks?.[1];
-        if (elseBlock) this.visit(elseBlock);
-      }
+      const thenBlock = blocks?.[0];
+      if (thenBlock) this.visit(thenBlock);
+    } else {
+      const elseBlock = blocks?.[1];
+      if (elseBlock) this.visit(elseBlock);
     }
     return null;
   }
 
-  visitWhileStmt(ctx: WhileStmtContext): Value {
+  visitWhileStmt(ctx: RedLangParser.WhileStmtContext): Value {
     while (this.isTruthy(this.visit(ctx.expression()))) {
       this.visit(ctx.block());
       if (this.hasReturned) break;
@@ -153,7 +220,7 @@ export default class CompilerVisitor
     return null;
   }
 
-  visitForStmt(ctx: ForStmtContext): Value {
+  visitForStmt(ctx: RedLangParser.ForStmtContext): Value {
     const initCtx = ctx.initStmt();
     const condCtx = ctx.expression();
     const updateCtx = ctx.assignment();
@@ -170,23 +237,32 @@ export default class CompilerVisitor
     return null;
   }
 
-  visitInitStmt(ctx: InitStmtContext): Value {
+  visitInitStmt(ctx: RedLangParser.InitStmtContext): Value {
     if (ctx.DECLARE()) {
       const varName = ctx.IDENT()?.text || "";
-      const typeCtx = ctx.type();
       const expr = ctx.expression();
-      const value = expr ? this.visit(expr) : this.getDefaultValue(typeCtx!);
+      const value = expr ? (this.visit(expr) as number) : (this.getDefaultValue(ctx.type()!) as number);
+
+      const reg = this.newReg(varName);
+      this.emit(`${reg} = alloca i32`);
+      this.emit(`store i32 ${value}, i32* ${reg}`);
+      this.variables.set(varName, { name: varName, reg });
       this.memory[varName] = value;
       return value;
     } else {
       const varName = ctx.IDENT()?.text || "";
-      const value = this.visit(ctx.expression()!);
+      const value = this.visit(ctx.expression()!) as number;
+      const variable = this.variables.get(varName);
+      if (!variable) {
+        throw new Error(`Variable ${varName} no declarada`);
+      }
+      this.emit(`store i32 ${value}, i32* ${variable.reg}`);
       this.memory[varName] = value;
       return value;
     }
   }
 
-  visitBlock(ctx: BlockContext): Value {
+  visitBlock(ctx: RedLangParser.BlockContext): Value {
     for (const stmt of ctx.statement()) {
       this.visit(stmt);
       if (this.hasReturned) break;
@@ -194,7 +270,7 @@ export default class CompilerVisitor
     return null;
   }
 
-  visitStatement(ctx: StatementContext): Value {
+  visitStatement(ctx: RedLangParser.StatementContext): Value {
     if (ctx.block()) return this.visitBlock(ctx.block()!);
     if (ctx.assignment()) return this.visitAssignment(ctx.assignment()!);
     if (ctx.ifStmt()) return this.visitIfStmt(ctx.ifStmt()!);
@@ -206,36 +282,32 @@ export default class CompilerVisitor
     return null;
   }
 
-  visitExpression(ctx: ExpressionContext): Value {
+  visitExpression(ctx: RedLangParser.ExpressionContext): Value {
     return this.visit(ctx.logicOr());
   }
 
-  visitLogicOr(ctx: LogicOrContext): Value {
+  visitLogicOr(ctx: RedLangParser.LogicOrContext): Value {
     let val = this.visit(ctx.logicAnd(0));
-
     if (ctx.logicAnd().length === 1) return val;
-
     for (let i = 1; i < ctx.logicAnd().length; i++) {
-      if (this.isTruthy(val)) return true; 
+      if (this.isTruthy(val)) return true;
+      val = this.visit(ctx.logicAnd(i));
     }
     return this.isTruthy(val);
   }
 
-  visitLogicAnd(ctx: LogicAndContext): Value {
+  visitLogicAnd(ctx: RedLangParser.LogicAndContext): Value {
     let val = this.visit(ctx.equality(0));
-
     if (ctx.equality().length === 1) return val;
-
     for (let i = 1; i < ctx.equality().length; i++) {
-      if (!this.isTruthy(val)) return false; 
+      if (!this.isTruthy(val)) return false;
       val = this.visit(ctx.equality(i));
     }
     return this.isTruthy(val);
   }
 
-  visitEquality(ctx: EqualityContext): Value {
+  visitEquality(ctx: RedLangParser.EqualityContext): Value {
     let val = this.visit(ctx.comparison(0));
-
     for (let i = 1; i < ctx.comparison().length; i++) {
       const right = this.visit(ctx.comparison(i));
       const op = ctx.getChild(2 * i - 1).text;
@@ -245,9 +317,8 @@ export default class CompilerVisitor
     return val;
   }
 
-  visitComparison(ctx: ComparisonContext): Value {
+  visitComparison(ctx: RedLangParser.ComparisonContext): Value {
     let val = this.visit(ctx.term(0));
-
     for (let i = 1; i < ctx.term().length; i++) {
       const right = this.visit(ctx.term(i));
       const op = ctx.getChild(2 * i - 1).text;
@@ -269,18 +340,13 @@ export default class CompilerVisitor
     return val;
   }
 
-  visitTerm(ctx: TermContext): Value {
+  visitTerm(ctx: RedLangParser.TermContext): Value {
     let val = this.visit(ctx.factor(0));
-
     for (let i = 1; i < ctx.factor().length; i++) {
       const right = this.visit(ctx.factor(i));
       const op = ctx.getChild(2 * i - 1).text;
       if (op === "+") {
-        if (typeof val === "string" || typeof right === "string") {
-          val = String(val) + String(right);
-        } else {
-          val = (val as number) + (right as number);
-        }
+        val = (val as number) + (right as number);
       } else if (op === "-") {
         val = (val as number) - (right as number);
       }
@@ -288,9 +354,8 @@ export default class CompilerVisitor
     return val;
   }
 
-  visitFactor(ctx: FactorContext): Value {
+  visitFactor(ctx: RedLangParser.FactorContext): Value {
     let val = this.visit(ctx.unary(0));
-
     for (let i = 1; i < ctx.unary().length; i++) {
       const right = this.visit(ctx.unary(i));
       const op = ctx.getChild(2 * i - 1).text;
@@ -303,21 +368,19 @@ export default class CompilerVisitor
     return val;
   }
 
-  visitUnary(ctx: UnaryContext): Value {
-    if (ctx.SUB()) {
-      return -(this.visit(ctx.unary()!) as number);
-    }
-    if (ctx.NOT()) {
-      return !this.isTruthy(this.visit(ctx.unary()!));
-    }
+  visitUnary(ctx: RedLangParser.UnaryContext): Value {
+    if (ctx.SUB()) return -(this.visit(ctx.unary()!) as number);
+    if (ctx.NOT()) return !this.isTruthy(this.visit(ctx.unary()!));
     return this.visit(ctx.primary()!);
   }
 
-  visitPrimary(ctx: PrimaryContext): Value {
+  visitPrimary(ctx: RedLangParser.PrimaryContext): Value {
     if (ctx.literal()) return this.visitLiteral(ctx.literal()!);
     if (ctx.IDENT()) {
       const name = ctx.IDENT()!.text;
       if (name in this.memory) return this.memory[name] ?? null;
+      const variable = this.variables.get(name);
+      if (variable) return this.memory[name] ?? 0;
       throw new Error(`Variable '${name}' no definida`);
     }
     if (ctx.expression()) return this.visit(ctx.expression()!);
@@ -326,12 +389,12 @@ export default class CompilerVisitor
     return null;
   }
 
-  visitLiteral(ctx: LiteralContext): Value {
+  visitLiteral(ctx: RedLangParser.LiteralContext): Value {
     if (ctx.INT_LIT()) return parseInt(ctx.INT_LIT()!.text);
     if (ctx.FLOAT_LIT()) return parseFloat(ctx.FLOAT_LIT()!.text);
     if (ctx.STRING_LIT()) {
       const text = ctx.STRING_LIT()!.text;
-      return text.slice(1, -1); 
+      return text.slice(1, -1);
     }
     if (ctx.TRUE()) return true;
     if (ctx.FALSE()) return false;
@@ -339,33 +402,30 @@ export default class CompilerVisitor
     return null;
   }
 
-  visitCallExpr(ctx: CallExprContext): Value {
+  visitCallExpr(ctx: RedLangParser.CallExprContext): Value {
     const fnName = ctx.IDENT()?.text || "";
-
     if (fnName === "show") {
       const args = this.getArguments(ctx.arguments());
       const value = args[0] ?? null;
       console.log(value);
       return value;
     }
-
     if (fnName in this.functions) {
       return this.callUserFunction(fnName, ctx.arguments());
     }
-
     throw new Error(`Función '${fnName}' no está definida`);
   }
 
-  visitArrayLiteral(ctx: ArrayLiteralContext): Value {
+  visitArrayLiteral(ctx: RedLangParser.ArrayLiteralContext): Value {
     if (!ctx.arguments()) return [];
     return this.getArguments(ctx.arguments()!);
   }
 
-  visitArguments(ctx: ArgumentsContext): Value[] {
+  visitArguments(ctx: RedLangParser.ArgumentsContext): Value[] {
     return this.getArguments(ctx);
   }
 
-  private getArguments(ctx: ArgumentsContext | undefined): Value[] {
+  private getArguments(ctx: RedLangParser.ArgumentsContext | undefined): Value[] {
     if (!ctx) return [];
     const args: Value[] = [];
     for (const expr of ctx.expression()) {
@@ -374,17 +434,12 @@ export default class CompilerVisitor
     return args;
   }
 
-  private callUserFunction(
-    fnName: string,
-    argsCtx: ArgumentsContext | undefined
-  ): Value {
+  private callUserFunction(fnName: string, argsCtx: RedLangParser.ArgumentsContext | undefined): Value {
     const func = this.functions[fnName];
     const args = this.getArguments(argsCtx);
 
     if (args.length !== func?.params.length) {
-      throw new Error(
-        `Función '${fnName}' espera ${func?.params.length} argumentos, pero recibió ${args.length}`
-      );
+      throw new Error(`Función '${fnName}' espera ${func?.params.length} argumentos, pero recibió ${args.length}`);
     }
 
     const savedMemory = { ...this.memory };
@@ -392,10 +447,7 @@ export default class CompilerVisitor
 
     if (func?.params) {
       for (let i = 0; i < func.params.length; i++) {
-        const paramName = func.params[i];
-        if (paramName) {
-          this.memory[paramName] = args[i] ?? null;
-        }
+        this.memory[func.params[i]] = args[i] ?? null;
       }
     }
 
@@ -412,14 +464,9 @@ export default class CompilerVisitor
     return result;
   }
 
-  private getDefaultValue(typeCtx: TypeContext): Value {
-    if (typeCtx.arrayType()) {
-      return [];
-    }
-
-    if (typeCtx.QUESTION()) {
-      return null;
-    }
+  private getDefaultValue(typeCtx: RedLangParser.TypeContext): Value {
+    if (typeCtx.arrayType()) return [];
+    if (typeCtx.QUESTION()) return null;
 
     const baseTypeCtx = typeCtx.baseType();
     if (!baseTypeCtx) return null;
@@ -440,5 +487,9 @@ export default class CompilerVisitor
 
   private equals(left: Value, right: Value): boolean {
     return left === right;
+  }
+
+  public dumpIR(): string {
+    return this.ir;
   }
 }
