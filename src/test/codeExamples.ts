@@ -279,7 +279,7 @@ func factorial(n: i): i {
     give n * factorial(n - 1);
 }
 
-show(factorial(5));
+show(factorial(10));
 `;
 // Esperado: 120
 
