@@ -5,9 +5,13 @@ import CompilerVisitor from "./visitors/CompilerVisitor";
 import { printTree } from "./utils/printTree";
 import LLVMVisitor from "./visitors/LLVMVisitor";
 import { allTests } from "./test/codeExamples";
+import { writeFileSync } from "fs";
 
 //lexer stage whit char stream
-const codeInput = CharStreams.fromString(allTests.test_15_primes); // divide string in chars example (d - e - c - l - r - e)
+
+const codeExam = ``;
+
+const codeInput = CharStreams.fromString(allTests.test_16_fizzbuzz); // divide string in chars example (d - e - c - l - r - e)
 const lexer = new RedLangLexer(codeInput);
 const token = new CommonTokenStream(lexer);
 
@@ -20,17 +24,17 @@ const visitor = new CompilerVisitor();
 
 visitor.visit(tree);
 
+// Building LLVM
 
-//Building LLVM
+// const llvmVisitor = new LLVMVisitor();
 
-/*
-const llvmVisitor = new LLVMVisitor();
+// llvmVisitor.visit(tree); 
 
-llvmVisitor.visit(tree);
+// const ir = llvmVisitor.dumpIR();
 
-if (parser.numberOfSyntaxErrors < 1) printTree(tree);
-else {
-  console.log("Hay errores");
-}
+// writeFileSync("output.ll", ir);
 
-*/
+// if (parser.numberOfSyntaxErrors < 1) printTree(tree);
+// else {
+//   console.log("Hay errores");
+// }
